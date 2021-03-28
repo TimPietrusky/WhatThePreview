@@ -1,0 +1,27 @@
+#!/bin/bash
+input_video=$1
+previews_amount=$2
+
+# Get the filename without path and without fileextension
+filename=$(basename -- "$input_video")
+filename="${filename%.*}"
+
+# Get the total lenght of the video and convert the float into int
+total_length=$(ffprobe -v error -select_streams v:0 -show_entries stream=duration -of default=noprint_wrappers=1:nokey=1 $input_video)
+total_length=$( printf "%.0f" $total_length )
+
+echo "total lenght of the input video: $total_length"
+echo "---------------"
+
+# Length of one chunk based on the total amount of chunks
+chunk_length=$(($total_length / $previews_amount))
+
+# Create the folder to store the preview images
+mkdir -p previews/$filename
+
+# Generate chunks from the input video
+for (( i=0; i<=$previews_amount; i++ ))
+do
+    offset=$(($i * $chunk_length))
+    ffmpeg -y -ss $offset -i $input_video -t 1 -r 1 previews/$filename/$filename-$i.jpg
+done
